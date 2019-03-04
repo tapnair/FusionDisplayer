@@ -11,7 +11,16 @@ _Note: there are a bunch of things I still have planned for this_
 
 ### Save View
 
-Saves the current Camera orientation.  You can give it a name and choose which custom view slot to save it into,
+Saves the current view.
+
+Give it a name and choose which custom view slot to save it into.
+
+You can select to save:
+* Camera Orientation
+* Hide / Show state of all parts
+* Visual Style (Shaded, Wire Frame, etc.)
+
+![Save View](./resources/save_view.png)
 
 
 ### Manage Views

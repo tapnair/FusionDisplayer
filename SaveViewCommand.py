@@ -46,35 +46,32 @@ def get_vector(vector):
     return vector_out
 
 
-def set_view(view_object):
+def set_camera(camera_object):
     ao = AppObjects()
 
     camera = ao.app.activeViewport.camera
 
-    camera.cameraType = view_object["camera_type"]
-    camera.eye = get_point(view_object["eye"])
-    camera.isFitView = view_object["is_fit_view"]
-    camera.isSmoothTransition = view_object["is_smooth"]
-    camera.target = get_point(view_object["target"])
-    camera.upVector = get_vector(view_object["up_vector"])
-    camera.viewExtents = view_object["view_extents"]
-    camera.viewOrientation = view_object["view_orientation"]
+    camera.cameraType = camera_object["camera_type"]
+    camera.eye = get_point(camera_object["eye"])
+    camera.isFitView = camera_object["is_fit_view"]
+    camera.isSmoothTransition = camera_object["is_smooth"]
+    camera.target = get_point(camera_object["target"])
+    camera.upVector = get_vector(camera_object["up_vector"])
+    camera.viewExtents = camera_object["view_extents"]
+    camera.viewOrientation = camera_object["view_orientation"]
 
-    if not view_object["camera_type"] == adsk.core.CameraTypes.OrthographicCameraType:
-        camera.perspectiveAngle = view_object["perspective_angle"]
+    if not camera_object["camera_type"] == adsk.core.CameraTypes.OrthographicCameraType:
+        camera.perspectiveAngle = camera_object["perspective_angle"]
 
-    ao.app.activeViewport.visualStyle = view_object["visual_style"]
     ao.app.activeViewport.camera = camera
 
 
-def build_view_object(name):
+def build_camera_object():
     ao = AppObjects()
     camera = ao.app.activeViewport.camera
 
-    view_object = {
-        "name": name,
+    camera_object = {
 
-        "visual_style": ao.app.activeViewport.visualStyle,
         "camera_type": camera.cameraType,
         "eye": make_point(camera.eye),
         "is_fit_view": camera.isFitView,
@@ -84,10 +81,33 @@ def build_view_object(name):
         "view_extents": camera.viewExtents,
         "view_orientation": camera.viewOrientation
     }
-    if not view_object["camera_type"] == adsk.core.CameraTypes.OrthographicCameraType:
-        view_object["perspective_angle"] = camera.perspectiveAngle
 
-    return view_object
+    if not camera_object["camera_type"] == adsk.core.CameraTypes.OrthographicCameraType:
+        camera_object["perspective_angle"] = camera.perspectiveAngle
+
+    return camera_object
+
+
+def build_display_state_object():
+    ao = AppObjects()
+    all_occurrences = ao.root_comp.allOccurrences
+    display_state_object = {}
+
+    for occurrence in all_occurrences:
+        display_state_object[occurrence.fullPathName] = occurrence.isLightBulbOn
+
+    return display_state_object
+
+
+def set_display_state(display_state_object):
+    ao = AppObjects()
+    all_occurrences = ao.root_comp.allOccurrences
+
+    for occurrence in all_occurrences:
+        state = display_state_object.get(occurrence.fullPathName, None)
+
+        if state is not None:
+            occurrence.isLightBulbOn = state
 
 
 def delete_view_attributes():
@@ -145,17 +165,26 @@ class CaptureViewCommand(Fusion360CommandBase):
     def on_execute(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs, args, input_values):
         ao = AppObjects()
 
-        view_object = build_view_object(input_values['view_name_id'])
+        view_object = {"name": input_values['view_name_id']}
+
+        if input_values["camera_input_checkbox"]:
+            view_object["camera"] = build_camera_object()
+
+        if input_values["display_input_checkbox"]:
+            view_object["display_state"] = build_display_state_object()
+
+        if input_values["visual_style_input_checkbox"]:
+            view_object["visual_style"] = ao.app.activeViewport.visualStyle
 
         json_string = json.dumps(view_object)
 
         ao.document.attributes.add('displayer_custom_views', input_values["view_names_input"], json_string)
 
-        command_defintion = ao.ui.commandDefinitions.itemById(
+        command_definition = ao.ui.commandDefinitions.itemById(
             'cmdID_SetViewCommand_' + input_values["view_names_input"][-1:]
         )
-        command_defintion.tooltip = input_values['view_name_id']
-        command_defintion.controlDefinition.isEnabled = True
+        command_definition.tooltip = input_values['view_name_id']
+        command_definition.controlDefinition.isEnabled = True
 
     def on_create(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs):
         inputs.addStringValueInput('view_name_id', "View Name: ", "My Custom View")
@@ -165,6 +194,10 @@ class CaptureViewCommand(Fusion360CommandBase):
         for custom_view_number in range(0, 10):
             drop_input.listItems.add("Custom View " + str(custom_view_number), False)
         drop_input.listItems.item(0).isSelected = True
+
+        inputs.addBoolValueInput("camera_input_checkbox", "Capture Camera?", True, '', True)
+        inputs.addBoolValueInput("display_input_checkbox", "Capture Hide/Show State?", True, '', True)
+        inputs.addBoolValueInput("visual_style_input_checkbox", "Capture Visual Style?", True, '', True)
 
 
 # Set current view to a custom view
@@ -186,7 +219,18 @@ class SetViewCommand(Fusion360CommandBase):
 
         if view_def is not None:
             view_object = json.loads(view_def.value)
-            set_view(view_object)
+            camera_object = view_object.get("camera", None)
+            display_state_object = view_object.get("display_state", None)
+            visual_style = view_object.get("visual_style", None)
+
+            if camera_object is not None:
+                set_camera(camera_object)
+
+            if display_state_object is not None:
+                set_display_state(display_state_object)
+
+            if display_state_object is not None:
+                ao.app.activeViewport.visualStyle = visual_style
 
     @staticmethod
     def get_tooltip(custom_view_number):
