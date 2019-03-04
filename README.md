@@ -14,14 +14,17 @@ _Note: there are a bunch of things I still have planned for this_
 Saves the current view.
 
 Give it a name and choose which custom view slot to save it into.
+Use Unique names to avoid issues.
 
 You can select to save:
 * Camera Orientation
 * Hide / Show state of all parts
 * Visual Style (Shaded, Wire Frame, etc.)
+* Applied Appearances
 
 ![Save View](./resources/save_view.png)
 
+_Note: exporting appearances is not supported_
 
 ### Manage Views
 Allows you to reassign custom views and individually delete them
@@ -49,6 +52,8 @@ Note if you have custom views defined in the current model and you import a view
 ### Export all Custom Views
 
 Exports all the views that you have saved in this model.
+
+_Note: exporting appearances is not supported_
 
 
 ## Custom keyboard shortcuts

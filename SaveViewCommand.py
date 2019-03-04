@@ -6,6 +6,7 @@ from .Fusion360Utilities.Fusion360Utilities import AppObjects, get_default_dir
 from .Fusion360Utilities.Fusion360CommandBase import Fusion360CommandBase
 
 import json
+from collections import defaultdict
 
 
 def make_point(point: adsk.core.Point3D):
@@ -130,6 +131,24 @@ def delete_tooltips():
         command_defintion.controlDefinition.isEnabled = False
 
 
+def delete_appearance_attributes():
+    ao = AppObjects()
+
+    appearance_object_attributes = ao.document.attributes.itemsByGroup('displayer_appearances')
+
+    for attribute in appearance_object_attributes:
+        attribute.deleteMe()
+
+
+def remove_all_appearances():
+    ao = AppObjects()
+    all_appearances = ao.design.appearances
+
+    for appearance in all_appearances:
+        used_by = appearance.usedBy
+        for item in used_by:
+            item.appearance = None
+
 def get_view_from_number(custom_view_number):
     ao = AppObjects()
     view_object_attribute = ao.document.attributes.itemByName(
@@ -159,6 +178,55 @@ def refresh_custom_views():
         command_defintion.controlDefinition.isEnabled = True
 
 
+def set_appearances(view_name):
+    ao = AppObjects()
+    attributes = ao.design.findAttributes("displayer_appearances", view_name)
+
+    remove_all_appearances()
+
+    if len(attributes) > 0:
+
+        for attribute in attributes:
+            item = attribute.parent
+
+            if item is not None:
+                item.appearance = ao.design.appearances.itemById(attribute.value)
+
+
+def build_appearances(view_name):
+    ao = AppObjects()
+    all_appearances = ao.design.appearances
+    for appearance in all_appearances:
+        used_by = appearance.usedBy
+        for item in used_by:
+
+            item.attributes.add("displayer_appearances", view_name, appearance.id)
+
+
+def get_appearance_object(view_name):
+    ao = AppObjects()
+    attributes = ao.design.findAttributes("displayer_appearances", view_name)
+
+    appearance_object = defaultdict(list)
+
+    if len(attributes) > 0:
+
+        for attribute in attributes:
+            item = attribute.parent
+
+            if item is not None:
+                appearance_object[attribute.value].append(item)
+
+    return appearance_object
+
+
+def build_appearances_from_object(view_name, appearance_object):
+
+    for appearance_id, item_list in appearance_object.items():
+
+        for item in item_list:
+            item.attributes.add("displayer_appearances", view_name, appearance_id)
+
 # Create a new custom view
 class CaptureViewCommand(Fusion360CommandBase):
 
@@ -166,6 +234,8 @@ class CaptureViewCommand(Fusion360CommandBase):
         ao = AppObjects()
 
         view_object = {"name": input_values['view_name_id']}
+
+        custom_view_name = input_values["view_names_input"]
 
         if input_values["camera_input_checkbox"]:
             view_object["camera"] = build_camera_object()
@@ -176,28 +246,38 @@ class CaptureViewCommand(Fusion360CommandBase):
         if input_values["visual_style_input_checkbox"]:
             view_object["visual_style"] = ao.app.activeViewport.visualStyle
 
+        if input_values["appearances_input_checkbox"]:
+            view_object["appearances"] = custom_view_name
+            build_appearances(custom_view_name)
+
         json_string = json.dumps(view_object)
 
-        ao.document.attributes.add('displayer_custom_views', input_values["view_names_input"], json_string)
+        ao.document.attributes.add('displayer_custom_views', custom_view_name, json_string)
 
         command_definition = ao.ui.commandDefinitions.itemById(
-            'cmdID_SetViewCommand_' + input_values["view_names_input"][-1:]
+            'cmdID_SetViewCommand_' + custom_view_name[-1:]
         )
         command_definition.tooltip = input_values['view_name_id']
         command_definition.controlDefinition.isEnabled = True
 
     def on_create(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs):
+        ao = AppObjects()
+
         inputs.addStringValueInput('view_name_id', "View Name: ", "My Custom View")
 
         drop_input = inputs.addDropDownCommandInput("view_names_input", "Which View to save?",
                                                     adsk.core.DropDownStyles.TextListDropDownStyle)
         for custom_view_number in range(0, 10):
-            drop_input.listItems.add("Custom View " + str(custom_view_number), False)
+            view_name = "Custom View " + str(custom_view_number)
+            view_def = ao.document.attributes.itemByName('displayer_custom_views', view_name)
+            if view_def is None:
+                drop_input.listItems.add("Custom View " + str(custom_view_number), False)
         drop_input.listItems.item(0).isSelected = True
 
         inputs.addBoolValueInput("camera_input_checkbox", "Capture Camera?", True, '', True)
         inputs.addBoolValueInput("display_input_checkbox", "Capture Hide/Show State?", True, '', True)
         inputs.addBoolValueInput("visual_style_input_checkbox", "Capture Visual Style?", True, '', True)
+        inputs.addBoolValueInput("appearances_input_checkbox", "Capture Appearances?", True, '', False)
 
 
 # Set current view to a custom view
@@ -212,16 +292,15 @@ class SetViewCommand(Fusion360CommandBase):
     def on_execute(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs, args, input_values):
         ao = AppObjects()
 
-        view_def = ao.document.attributes.itemByName(
-            'displayer_custom_views',
-            "Custom View " + str(self.custom_view_number)
-        )
+        view_name = "Custom View " + str(self.custom_view_number)
+        view_def = ao.document.attributes.itemByName('displayer_custom_views', view_name)
 
         if view_def is not None:
             view_object = json.loads(view_def.value)
             camera_object = view_object.get("camera", None)
             display_state_object = view_object.get("display_state", None)
             visual_style = view_object.get("visual_style", None)
+            appearances_view_name = view_object.get("appearances", None)
 
             if camera_object is not None:
                 set_camera(camera_object)
@@ -231,6 +310,9 @@ class SetViewCommand(Fusion360CommandBase):
 
             if display_state_object is not None:
                 ao.app.activeViewport.visualStyle = visual_style
+
+            if appearances_view_name is not None:
+                set_appearances(appearances_view_name)
 
     @staticmethod
     def get_tooltip(custom_view_number):
@@ -269,22 +351,33 @@ class ManageViewsCommand(Fusion360CommandBase):
         view_object_attributes = ao.document.attributes.itemsByGroup('displayer_custom_views')
         saved_views = {}
 
+        appearance_views = {}
+
         for view_object_attribute in view_object_attributes:
             view_object = json.loads(view_object_attribute.value)
             saved_views[view_object["name"]] = view_object
-
+            if view_object.get("appearances", None) is not None:
+                appearance_views[view_object["name"]] = get_appearance_object(view_object["appearances"])
+            else:
+                appearance_views[view_object["name"]] = None
         delete_view_attributes()
         delete_tooltips()
+        delete_appearance_attributes()
 
         for cmd_input in inputs:
             view_object = saved_views[cmd_input.name]
+            appearance_object = appearance_views[cmd_input.name]
+            view_name = cmd_input.selectedItem.name
 
             if not cmd_input.selectedItem.name == "**Delete This View**":
-                ao.document.attributes.add('displayer_custom_views', cmd_input.selectedItem.name,
-                                           json.dumps(view_object))
+                ao.document.attributes.add('displayer_custom_views', view_name,
+                                           json.dumps(view_object)
+                                           )
+                if appearance_object is not None:
+                    build_appearances_from_object(view_name, appearance_object)
 
                 command_defintion = ao.ui.commandDefinitions.itemById(
-                    'cmdID_SetViewCommand_' + cmd_input.selectedItem.name[-1:]
+                    'cmdID_SetViewCommand_' + view_name[-1:]
                 )
 
                 command_defintion.tooltip = view_object["name"]
@@ -315,6 +408,7 @@ class DeleteAllViewsCommand(Fusion360CommandBase):
     def on_execute(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs, args, input_values):
         delete_view_attributes()
         delete_tooltips()
+        delete_appearance_attributes()
 
     def on_create(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs):
         inputs.addTextBoxCommandInput("delete_text_input", "",
