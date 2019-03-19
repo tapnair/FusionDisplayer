@@ -91,24 +91,36 @@ def build_camera_object():
 
 def build_display_state_object():
     ao = AppObjects()
-    all_occurrences = ao.root_comp.allOccurrences
+    root_comp = ao.root_comp
+
     display_state_object = {}
 
-    for occurrence in all_occurrences:
-        display_state_object[occurrence.fullPathName] = occurrence.isLightBulbOn
+    if root_comp is not None:
+
+        all_occurrences = ao.root_comp.allOccurrences
+
+        for occurrence in all_occurrences:
+            display_state_object[occurrence.fullPathName] = occurrence.isLightBulbOn
 
     return display_state_object
 
 
 def set_display_state(display_state_object):
     ao = AppObjects()
-    all_occurrences = ao.root_comp.allOccurrences
+    root_comp = ao.root_comp
+
+    if root_comp is None:
+        return False
+
+    all_occurrences = root_comp.allOccurrences
 
     for occurrence in all_occurrences:
         state = display_state_object.get(occurrence.fullPathName, None)
 
         if state is not None:
             occurrence.isLightBulbOn = state
+
+    return True
 
 
 def delete_view_attributes():
@@ -307,8 +319,6 @@ class SetViewCommand(Fusion360CommandBase):
 
             if display_state_object is not None:
                 set_display_state(display_state_object)
-
-            if display_state_object is not None:
                 ao.app.activeViewport.visualStyle = visual_style
 
             if appearances_view_name is not None:
