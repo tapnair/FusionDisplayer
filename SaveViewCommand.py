@@ -308,6 +308,7 @@ def build_appearances_from_object(view_name, appearance_object):
         for item in item_list:
             item.attributes.add("displayer_appearances", view_name, appearance_id)
 
+
 # Create a new custom view
 class CaptureViewCommand(Fusion360CommandBase):
 
@@ -351,12 +352,16 @@ class CaptureViewCommand(Fusion360CommandBase):
 
         drop_input = inputs.addDropDownCommandInput("view_names_input", "Which View to save?",
                                                     adsk.core.DropDownStyles.TextListDropDownStyle)
+        first = 0
+
         for custom_view_number in range(0, 10):
             view_name = "Custom View " + str(custom_view_number)
             view_def = ao.document.attributes.itemByName('displayer_custom_views', view_name)
-            if view_def is None:
-                drop_input.listItems.add("Custom View " + str(custom_view_number), False)
-        drop_input.listItems.item(0).isSelected = True
+            drop_input.listItems.add("Custom View " + str(custom_view_number), False)
+            if view_def is None and first == 0:
+                first = custom_view_number
+
+        drop_input.listItems.item(first).isSelected = True
 
         inputs.addBoolValueInput("camera_input_checkbox", "Capture Camera?", True, '', True)
         inputs.addBoolValueInput("display_input_checkbox", "Capture Hide/Show State?", True, '', True)
