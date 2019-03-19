@@ -89,6 +89,68 @@ def build_camera_object():
     return camera_object
 
 
+def build_parameter_object(all_params):
+    ao = AppObjects()
+    um = ao.units_manager
+
+    design = ao.design
+
+    if design is None:
+        return None
+
+    if design.designType == adsk.fusion.DesignTypes.ParametricDesignType:
+
+        if all_params:
+            parameters = design.allParameters
+        else:
+            parameters = design.userParameters
+
+        parameter_object = {}
+
+        for parameter in parameters:
+            parameter_object[parameter.name] = um.formatInternalValue(parameter.value, parameter.unit, False)
+
+        return parameter_object
+    else:
+        return False
+
+
+def set_parameters(parameter_object):
+    ao = AppObjects()
+    um = ao.units_manager
+
+    design = ao.design
+
+    if design is None:
+        return False
+
+    if design.designType == adsk.fusion.DesignTypes.ParametricDesignType:
+
+        all_parameters = design.allParameters
+
+        for parameter in all_parameters:
+
+            new_value = parameter_object.get(parameter.name)
+            if new_value is not None:
+                unit_type = parameter.unit
+
+                if len(unit_type) > 0:
+
+                    if um.isValidExpression(new_value, unit_type):
+                        evaluated_value = um.evaluateExpression(new_value, unit_type)
+                    else:
+                        continue
+                else:
+                    evaluated_value = float(new_value)
+
+                # TODO handle units with an attribute that is written on create.  Can be set for link
+                if parameter.value != evaluated_value:
+                    parameter.value = evaluated_value
+        return True
+
+    else:
+        return False
+
 def build_display_state_object():
     ao = AppObjects()
     root_comp = ao.root_comp
@@ -262,6 +324,9 @@ class CaptureViewCommand(Fusion360CommandBase):
             view_object["appearances"] = custom_view_name
             build_appearances(custom_view_name)
 
+        if input_values["parameters_input_checkbox"]:
+            view_object["parameters"] = build_parameter_object(True)
+
         json_string = json.dumps(view_object)
 
         ao.document.attributes.add('displayer_custom_views', custom_view_name, json_string)
@@ -290,6 +355,7 @@ class CaptureViewCommand(Fusion360CommandBase):
         inputs.addBoolValueInput("display_input_checkbox", "Capture Hide/Show State?", True, '', True)
         inputs.addBoolValueInput("visual_style_input_checkbox", "Capture Visual Style?", True, '', True)
         inputs.addBoolValueInput("appearances_input_checkbox", "Capture Appearances?", True, '', False)
+        inputs.addBoolValueInput("parameters_input_checkbox", "Capture Parameters?", True, '', False)
 
 
 # Set current view to a custom view
@@ -313,6 +379,7 @@ class SetViewCommand(Fusion360CommandBase):
             display_state_object = view_object.get("display_state", None)
             visual_style = view_object.get("visual_style", None)
             appearances_view_name = view_object.get("appearances", None)
+            parameters_object = view_object.get("parameters", None)
 
             if camera_object is not None:
                 set_camera(camera_object)
@@ -323,6 +390,9 @@ class SetViewCommand(Fusion360CommandBase):
 
             if appearances_view_name is not None:
                 set_appearances(appearances_view_name)
+
+            if parameters_object is not None:
+                set_parameters(parameters_object)
 
     @staticmethod
     def get_tooltip(custom_view_number):

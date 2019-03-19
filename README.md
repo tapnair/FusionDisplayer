@@ -21,6 +21,7 @@ You can select to save:
 * Hide / Show state of all parts
 * Visual Style (Shaded, Wire Frame, etc.)
 * Applied Appearances
+* Design Parameters (All Dimension Values and User Parameters)
 
 ![Save View](./resources/save_view.png)
 
@@ -28,8 +29,6 @@ _Note: exporting appearances is not supported_
 
 ### Manage Views
 Allows you to reassign custom views and individually delete them
-
-Removes all appearance overrides in the model
 
 ### Saved Views
 
