@@ -108,7 +108,13 @@ def build_parameter_object(all_params):
         parameter_object = {}
 
         for parameter in parameters:
-            parameter_object[parameter.name] = um.formatInternalValue(parameter.value, parameter.unit, False)
+            parameter_object[parameter.name] = {
+                "value": um.formatInternalValue(parameter.value, parameter.unit, False),
+                "expression": parameter.expression,
+                "dependants": True if parameter.dependentParameters.count > 0 else False,
+                "unit": parameter.unit,
+                "deletable": parameter.isDeletable
+            }
 
         return parameter_object
     else:
@@ -130,26 +136,27 @@ def set_parameters(parameter_object):
 
         for parameter in all_parameters:
 
-            new_value = parameter_object.get(parameter.name)
-            if new_value is not None:
-                unit_type = parameter.unit
+            this_parameter = parameter_object.get(parameter.name)
+            if this_parameter is not None:
+                unit_type = this_parameter.get("unit", "")
 
                 if len(unit_type) > 0:
 
-                    if um.isValidExpression(new_value, unit_type):
-                        evaluated_value = um.evaluateExpression(new_value, unit_type)
+                    if um.isValidExpression(this_parameter["expression"], unit_type):
+                        evaluated_value = um.evaluateExpression(this_parameter["expression"], unit_type)
                     else:
                         continue
                 else:
-                    evaluated_value = float(new_value)
+                    evaluated_value = um.evaluateExpression(this_parameter["expression"])
 
                 # TODO handle units with an attribute that is written on create.  Can be set for link
                 if parameter.value != evaluated_value:
-                    parameter.value = evaluated_value
+                    parameter.expression = this_parameter["expression"]
         return True
 
     else:
         return False
+
 
 def build_display_state_object():
     ao = AppObjects()
