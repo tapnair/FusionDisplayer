@@ -579,7 +579,8 @@ class ImportViewsCommand(Fusion360CommandBase):
 
         file_dialog = ao.ui.createFileDialog()
 
-        file_dialog.initialDirectory = default_dir
+        # file_dialog.initialDirectory = default_dir
+        file_dialog.initialDirectory = "/Users/rainsbp/Dropbox/test_test_23"
 
         file_dialog.isMultiSelectEnabled = False
 
