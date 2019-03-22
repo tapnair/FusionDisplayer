@@ -2,10 +2,11 @@ import adsk.core
 import adsk.fusion
 import traceback
 
-from .Fusion360Utilities.Fusion360Utilities import AppObjects, get_default_dir
+from .Fusion360Utilities.Fusion360Utilities import AppObjects, get_default_dir, read_settings, write_settings
 from .Fusion360Utilities.Fusion360CommandBase import Fusion360CommandBase
 
 import json
+import os
 from collections import defaultdict
 
 
@@ -229,6 +230,7 @@ def remove_all_appearances():
         used_by = appearance.usedBy
         for item in used_by:
             item.appearance = None
+
 
 def get_view_from_number(custom_view_number):
     ao = AppObjects()
@@ -530,17 +532,34 @@ class ExportAllViewsCommand(Fusion360CommandBase):
                 all_views["Custom View " + str(custom_view_number)] = view_object
 
         all_views_text = json.dumps(all_views)
-        file_name = input_values["export_dir_input"] + input_values["export_file_input"] + ".json"
+        directory = input_values["export_dir_input"]
+
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        file_name = os.path.join(directory, input_values["export_file_input"] + ".json")
         f = open(file_name, "w")
         f.write(all_views_text)
         f.close()
 
+        settings = {
+            "app_name": "Displayer",
+            "default_dir": directory
+        }
+
+        write_settings("Displayer", settings)
 
     def on_create(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs):
-        default_dir = get_default_dir("Displayer")
+        ao = AppObjects()
+
+        app_name = "Displayer"
+        settings = read_settings(app_name)
+        default_dir = settings.get("default_dir", get_default_dir(app_name))
+
         inputs.addStringValueInput("export_dir_input", "Directory Name", default_dir)
 
-        inputs.addStringValueInput("export_file_input", "File Name", "Displayer_saved_views")
+        default_name = ao.document.name
+        inputs.addStringValueInput("export_file_input", "File Name", default_name)
 
 
 # Create a new custom view
@@ -548,7 +567,15 @@ class ImportViewsCommand(Fusion360CommandBase):
 
     def on_execute(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs, args, input_values):
         ao = AppObjects()
-        default_dir = get_default_dir("Displayer")
+        app_name = "Displayer"
+
+        settings = read_settings(app_name)
+
+        # ao.ui.messageBox(str(settings))
+
+        default_dir = settings.get("default_dir", get_default_dir(app_name))
+
+        # ao.ui.messageBox(default_dir)
 
         file_dialog = ao.ui.createFileDialog()
 
@@ -561,11 +588,11 @@ class ImportViewsCommand(Fusion360CommandBase):
 
         # Show file open dialog
         dialog_result = file_dialog.showOpen()
+
         if dialog_result == adsk.core.DialogResults.DialogOK:
             file_name = file_dialog.filename
         else:
             return
-
         with open(file_name) as f:
             all_views = json.load(f)
 
