@@ -2,7 +2,8 @@
 # Could import multiple Command definitions here
 from .Demo1Command import Demo1Command
 from .SaveViewCommand import SetViewCommand, CaptureViewCommand, ManageViewsCommand, \
-    DeleteAllViewsCommand, ImportViewsCommand, ExportAllViewsCommand, RefreshViewsCommand
+    DeleteAllViewsCommand, ImportViewsCommand, ExportAllViewsCommand, RefreshViewsCommand, \
+    NormalToCommand, NormalToSketchCommand
 from .DemoPaletteCommand import DemoPaletteShowCommand, DemoPaletteSendCommand
 
 commands = []
@@ -107,6 +108,34 @@ cmd = {
     'toolbar_panel_id': 'Displayer',
     'command_promoted': False,
     'class': ExportAllViewsCommand
+}
+command_definitions.append(cmd)
+
+
+# Define parameters for 1st command
+cmd = {
+    'cmd_name': 'Normal To',
+    'cmd_description': 'Look At, with enhancements',
+    'cmd_id': 'cmdID_NormalToCommand',
+    'cmd_resources': './resources',
+    'workspace': 'FusionSolidEnvironment',
+    'toolbar_panel_id': 'Displayer',
+    'command_promoted': False,
+    'class': NormalToCommand
+}
+command_definitions.append(cmd)
+
+# Define parameters for 1st command
+cmd = {
+    'cmd_name': 'Normal To',
+    'cmd_description': 'Look At, with enhancements',
+    'cmd_id': 'cmdID_NormalToSketchCommand',
+    'cmd_resources': './resources',
+    'workspace': 'FusionSolidEnvironment',
+    'toolbar_panel_id': 'Displayer',
+    'command_promoted': False,
+    'command_visible': False,
+    'class': NormalToSketchCommand
 }
 command_definitions.append(cmd)
 

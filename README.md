@@ -54,6 +54,13 @@ Exports all the views that you have saved in this model.
 
 _Note: exporting appearances is not supported_
 
+### Normal To
+
+Executes the standard "Look At" command.
+
+_Except if it is a sketch.  Then it still executes a normal to sketch view and does a fit view._
+
+The primary use case is that it gives you ability to assign a keyboard shortcut.
 
 ## Custom keyboard shortcuts
 

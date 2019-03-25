@@ -619,3 +619,52 @@ class ImportViewsCommand(Fusion360CommandBase):
 class RefreshViewsCommand(Fusion360CommandBase):
     def on_execute(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs, args, input_values):
         refresh_custom_views()
+
+
+class NormalToCommand(Fusion360CommandBase):
+    def on_execute(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs, args, input_values):
+        ao = AppObjects()
+
+        active_object = ao.design.activeEditObject
+
+        # ao.ui.messageBox(active_object.name)
+        # selections = ao.ui.activeSelections
+        if active_object.objectType == adsk.fusion.Sketch.classType():
+
+            selections = ao.ui.activeSelections
+            # old_selections = selections.asArray()
+            #
+            selections.clear()
+            # adsk.doEvents()
+            selections.add(active_object)
+            ao.ui.commandDefinitions.itemById("LookAtCommand").execute()
+            ao.ui.commandDefinitions.itemById("cmdID_NormalToSketchCommand").execute()
+            # ao.app.activeViewport.refresh()
+            # ao.app.activeViewport.fit()
+            # adsk.doEvents()
+            # selections.clear()
+
+        else:
+            ao.ui.commandDefinitions.itemById("LookAtCommand").execute()
+
+        # adsk.doEvents()
+        # selections.clear()
+            # ao.ui.terminateActiveCommand()
+
+            # for old_selection in old_selections:
+            #     if adsk.core.Base.cast(old_selection.entity) is not None:
+            #         selections.add(old_selection.entity)
+            # ao.ui.terminateActiveCommand()
+
+
+class NormalToSketchCommand(Fusion360CommandBase):
+    def on_execute(self, command: adsk.core.Command, inputs: adsk.core.CommandInputs, args, input_values):
+        ao = AppObjects()
+        ao.app.activeViewport.refresh()
+        selections = ao.ui.activeSelections
+        selections.clear()
+        ao.app.activeViewport.fit()
+        ao.ui.terminateActiveCommand()
+        selections = ao.ui.activeSelections
+        selections.clear()
+
