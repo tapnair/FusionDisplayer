@@ -202,7 +202,7 @@ class Fusion360CommandBase:
 
         return CommandCreatedEventHandler(self)
 
-    def on_run(self):
+    def add_command(self, this_workspace):
         global handlers
 
         app = adsk.core.Application.cast(adsk.core.Application.get())
@@ -212,7 +212,7 @@ class Fusion360CommandBase:
 
             cmd_definitions = ui.commandDefinitions
 
-            controls_to_add_to = get_controls(self.command_in_nav_bar, self.workspace, self.toolbar_panel_id, ui)
+            controls_to_add_to = get_controls(self.command_in_nav_bar, this_workspace, self.toolbar_panel_id, ui)
 
             # Add to a drop down
             if self.add_to_drop_down:
@@ -236,9 +236,9 @@ class Fusion360CommandBase:
                                                                          self.cmd_description,
                                                                          self.cmd_resources)
 
-                on_command_created_handler = self.get_create_event()
-                cmd_definition.commandCreated.add(on_command_created_handler)
-                handlers.append(on_command_created_handler)
+                    on_command_created_handler = self.get_create_event()
+                    cmd_definition.commandCreated.add(on_command_created_handler)
+                    handlers.append(on_command_created_handler)
 
                 new_control = controls_to_add_to.addCommand(cmd_definition)
 
@@ -255,20 +255,21 @@ class Fusion360CommandBase:
                 if self.command_promoted:
                     new_control.isPromoted = True
                 else:
-                    new_control.isPromoted = False
-
+                    if not self.command_in_nav_bar:
+                        new_control.isPromoted = False
 
         except:
             if ui:
                 ui.messageBox('AddIn Start Failed: {}'.format(traceback.format_exc()))
 
-    def on_stop(self):
+    def remove_command(self, workspace):
+
         app = adsk.core.Application.cast(adsk.core.Application.get())
         ui = app.userInterface
 
         try:
 
-            controls_to_delete_from = get_controls(self.command_in_nav_bar, self.workspace, self.toolbar_panel_id, ui)
+            controls_to_delete_from = get_controls(self.command_in_nav_bar, workspace, self.toolbar_panel_id, ui)
 
             # If it is in a drop down
             if self.add_to_drop_down:
@@ -291,6 +292,26 @@ class Fusion360CommandBase:
         except:
             if ui:
                 ui.messageBox('AddIn Stop Failed: {}'.format(traceback.format_exc()))
+
+    def on_run(self):
+
+        if isinstance(self.workspace, str):
+            self.add_command(self.workspace)
+        elif all(isinstance(item, str) for item in self.workspace):
+            for workspace in self.workspace:
+                self.add_command(workspace)
+        else:
+            raise TypeError  # or something along that line
+
+    def on_stop(self):
+
+        if isinstance(self.workspace, str):
+            self.remove_command(self.workspace)
+        elif all(isinstance(item, str) for item in self.workspace):
+            for workspace in self.workspace:
+                self.remove_command(workspace)
+        else:
+            raise TypeError  # or something along that line
 
 
 # Base Class for creating Fusion 360 Commands

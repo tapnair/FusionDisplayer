@@ -9,15 +9,20 @@ from .DemoPaletteCommand import DemoPaletteShowCommand, DemoPaletteSendCommand
 commands = []
 command_definitions = []
 
+command_in_nav_bar = False
+workspaces = ['FusionSolidEnvironment', "CAMEnvironment"]
+panel = 'Displayer'
+
 # Define parameters for 1st command
 cmd = {
     'cmd_name': 'Save View',
     'cmd_description': 'Save The Current Viewport',
     'cmd_id': 'cmdID_CaptureViewCommand',
     'cmd_resources': './resources',
-    'workspace': 'FusionSolidEnvironment',
-    'toolbar_panel_id': 'Displayer',
+    'workspace': workspaces,
+    'toolbar_panel_id': panel,
     'command_promoted': True,
+    'command_in_nav_bar': command_in_nav_bar,
     'class': CaptureViewCommand
 }
 command_definitions.append(cmd)
@@ -28,9 +33,10 @@ cmd = {
     'cmd_description': 'Manage your saved views',
     'cmd_id': 'cmdID_ManageViewsCommand',
     'cmd_resources': './resources',
-    'workspace': 'FusionSolidEnvironment',
-    'toolbar_panel_id': 'Displayer',
+    'workspace': workspaces,
+    'toolbar_panel_id': panel,
     'command_promoted': False,
+    'command_in_nav_bar': command_in_nav_bar,
     'class': ManageViewsCommand
 }
 command_definitions.append(cmd)
@@ -41,13 +47,14 @@ cmd = {
     'cmd_description': 'Refresh your saved views list',
     'cmd_id': 'cmdID_RefreshViewsCommand',
     'cmd_resources': './resources',
-    'workspace': 'FusionSolidEnvironment',
-    'toolbar_panel_id': 'Displayer',
+    'workspace': workspaces,
+    'toolbar_panel_id': panel,
     'add_to_drop_down': True,
     'drop_down_cmd_id': 'cmd_id_saved_views',
     'drop_down_resources': './resources',
     'drop_down_name': "Saved Views",
     'command_promoted': False,
+    'command_in_nav_bar': command_in_nav_bar,
     'class': RefreshViewsCommand
 }
 command_definitions.append(cmd)
@@ -59,15 +66,15 @@ for view_number in range(0, 10):
         'cmd_description': SetViewCommand.get_tooltip(view_number),
         'cmd_id': 'cmdID_SetViewCommand_' + str(view_number),
         'cmd_resources': './resources',
-        'workspace': 'FusionSolidEnvironment',
-        'toolbar_panel_id': 'Displayer',
+        'workspace': workspaces,
+        'toolbar_panel_id': panel,
         'custom_view_number': view_number,
         'command_enabled': SetViewCommand.get_view_exists(view_number),
         'add_to_drop_down': True,
         'drop_down_cmd_id': 'cmd_id_saved_views',
         'drop_down_resources': './resources',
         'drop_down_name': "Saved Views",
-        # 'command_in_nav_bar': True,
+        'command_in_nav_bar': command_in_nav_bar,
         'class': SetViewCommand
     }
     command_definitions.append(cmd)
@@ -78,9 +85,10 @@ cmd = {
     'cmd_description': 'This cannot be undone',
     'cmd_id': 'cmdID_DeleteAllViewsCommand',
     'cmd_resources': './resources',
-    'workspace': 'FusionSolidEnvironment',
-    'toolbar_panel_id': 'Displayer',
+    'workspace': workspaces,
+    'toolbar_panel_id': panel,
     'command_promoted': False,
+    'command_in_nav_bar': command_in_nav_bar,
     'class': DeleteAllViewsCommand
 }
 command_definitions.append(cmd)
@@ -91,9 +99,10 @@ cmd = {
     'cmd_description': 'This cannot be undone',
     'cmd_id': 'cmdID_ImportViewsCommand',
     'cmd_resources': './resources',
-    'workspace': 'FusionSolidEnvironment',
-    'toolbar_panel_id': 'Displayer',
+    'workspace': workspaces,
+    'toolbar_panel_id': panel,
     'command_promoted': False,
+    'command_in_nav_bar': command_in_nav_bar,
     'class': ImportViewsCommand
 }
 command_definitions.append(cmd)
@@ -104,9 +113,10 @@ cmd = {
     'cmd_description': 'Save all the view definitions',
     'cmd_id': 'cmdID_ExportAllViewsCommand',
     'cmd_resources': './resources',
-    'workspace': 'FusionSolidEnvironment',
-    'toolbar_panel_id': 'Displayer',
+    'workspace': workspaces,
+    'toolbar_panel_id': panel,
     'command_promoted': False,
+    'command_in_nav_bar': command_in_nav_bar,
     'class': ExportAllViewsCommand
 }
 command_definitions.append(cmd)
@@ -118,9 +128,10 @@ cmd = {
     'cmd_description': 'Look At, with enhancements',
     'cmd_id': 'cmdID_NormalToCommand',
     'cmd_resources': './resources',
-    'workspace': 'FusionSolidEnvironment',
-    'toolbar_panel_id': 'Displayer',
+    'workspace': workspaces,
+    'toolbar_panel_id': panel,
     'command_promoted': False,
+    'command_in_nav_bar': command_in_nav_bar,
     'class': NormalToCommand
 }
 command_definitions.append(cmd)
@@ -131,10 +142,11 @@ cmd = {
     'cmd_description': 'Look At, with enhancements',
     'cmd_id': 'cmdID_NormalToSketchCommand',
     'cmd_resources': './resources',
-    'workspace': 'FusionSolidEnvironment',
-    'toolbar_panel_id': 'Displayer',
+    'workspace': workspaces,
+    'toolbar_panel_id': panel,
     'command_promoted': False,
     'command_visible': False,
+    'command_in_nav_bar': command_in_nav_bar,
     'class': NormalToSketchCommand
 }
 command_definitions.append(cmd)
@@ -145,7 +157,7 @@ command_definitions.append(cmd)
 #     'cmd_description': 'Fusion Demo Palette Description',
 #     'cmd_id': 'cmdID_palette_demo_1',
 #     'cmd_resources': './resources',
-#     'workspace': 'FusionSolidEnvironment',
+#     'workspace': workspaces,
 #     'toolbar_panel_id': 'SolidScriptsAddinsPanel',
 #     'command_visible': True,
 #     'command_promoted': False,
@@ -167,7 +179,7 @@ command_definitions.append(cmd)
 #     'cmd_description': 'Send info to Fusion 360 Palette',
 #     'cmd_id': 'cmdID_palette_send_demo_1',
 #     'cmd_resources': './resources',
-#     'workspace': 'FusionSolidEnvironment',
+#     'workspace': workspaces,
 #     'toolbar_panel_id': 'SolidScriptsAddinsPanel',
 #     'command_visible': True,
 #     'command_promoted': False,
