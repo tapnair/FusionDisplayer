@@ -1,13 +1,13 @@
 {
 	"autodeskProduct":	"Fusion360",
 	"type":	"addin",
-	"id":	"e6e3d13b-fb0b-4461-b42f-f30af562b5ca",
-	"author":	"",
+	"id":	"e6f3d16b-fd0d-4461-b42f-f20af592b2da",
+	"author":	"Patrick Rainsberry",
 	"description":	{
-		"":	""
+		"":	"Display management app for Fusion 360"
 	},
-	"version":	"",
-	"runOnStartup":	false,
+	"version":	"1.2",
+	"runOnStartup":	true,
 	"supportedOS":	"windows|mac",
 	"editEnabled":	true
 }
