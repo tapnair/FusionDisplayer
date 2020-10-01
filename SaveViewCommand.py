@@ -400,6 +400,8 @@ class SetViewCommand(Fusion360CommandBase):
 
             if display_state_object is not None:
                 set_display_state(display_state_object)
+
+            if visual_style is not None:
                 ao.app.activeViewport.visualStyle = visual_style
 
             if appearances_view_name is not None:
