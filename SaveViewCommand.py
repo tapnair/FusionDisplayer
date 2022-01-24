@@ -413,10 +413,14 @@ class SetViewCommand(Fusion360CommandBase):
     @staticmethod
     def get_tooltip(custom_view_number):
         ao = AppObjects()
-        view_object_attribute = ao.document.attributes.itemByName(
-            'displayer_custom_views',
-            "Custom View " + str(custom_view_number)
-        )
+        view_object_attribute = None
+
+        if ao.document is not None:
+            view_object_attribute = ao.document.attributes.itemByName(
+                'displayer_custom_views',
+                "Custom View " + str(custom_view_number)
+            )
+
         if view_object_attribute is not None:
             tooltip = json.loads(view_object_attribute.value)["name"]
         else:
@@ -427,10 +431,13 @@ class SetViewCommand(Fusion360CommandBase):
     @staticmethod
     def get_view_exists(custom_view_number):
         ao = AppObjects()
-        view_object_attribute = ao.document.attributes.itemByName(
-            'displayer_custom_views',
-            "Custom View " + str(custom_view_number)
-        )
+        view_object_attribute = None
+
+        if ao.document is not None:
+            view_object_attribute = ao.document.attributes.itemByName(
+                'displayer_custom_views',
+                "Custom View " + str(custom_view_number)
+            )
         if view_object_attribute is not None:
             exists = True
         else:

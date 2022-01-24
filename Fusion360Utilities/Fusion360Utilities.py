@@ -12,6 +12,7 @@ import json
 
 # Class to quickly access Fusion Application Objects
 class AppObjects(object):
+    """The AppObjects class wraps many common application objects required when writing a Fusion 360 Addin."""
 
     def __init__(self):
 
@@ -23,14 +24,61 @@ class AppObjects(object):
         # Get User Interface
         self.ui = self.app.userInterface
 
-        self.document = self.app.activeDocument
-        self.product = self.app.activeProduct
-
+        self._document = self.document
+        self._product = self.product
         self._design = self.design
+
+    def print_msg(self, message):
+        print(message)
+        self.ui.palettes.itemById('TextCommands').writeText(message)
+
+    @property
+    def document(self) -> Optional[adsk.core.Document]:
+        """adsk.fusion.Design from the active document
+
+        Returns: adsk.fusion.Design from the active document
+
+        """
+        document = None
+        try:
+            document = self.app.activeDocument
+        except:
+            pass
+
+        if document is not None:
+            return document
+        else:
+            return None
+
+    @property
+    def product(self) -> Optional[adsk.core.Product]:
+        """adsk.fusion.Design from the active document
+
+        Returns: adsk.fusion.Design from the active document
+
+        """
+        product = None
+        try:
+            product = self.app.activeProduct
+        except:
+            pass
+
+        if product is not None:
+            return product
+        else:
+            return None
 
     @property
     def design(self) -> Optional[adsk.fusion.Design]:
-        design_ = self.document.products.itemByProductType('DesignProductType')
+        """adsk.fusion.Design from the active document
+
+        Returns: adsk.fusion.Design from the active document
+
+        """
+        design_ = None
+        if self.document is not None:
+            design_ = self.document.products.itemByProductType('DesignProductType')
+
         if design_ is not None:
             return design_
         else:
@@ -38,7 +86,16 @@ class AppObjects(object):
 
     @property
     def cam(self) -> Optional[adsk.cam.CAM]:
-        cam_ = self.document.products.itemByProductType('CAMProductType')
+        """adsk.cam.CAM from the active document
+
+        Note if the document has never been activated in the CAM environment this will return None
+
+        Returns: adsk.cam.CAM from the active document
+
+        """
+        cam_ = None
+        if self.document is not None:
+            cam_ = self.document.products.itemByProductType('CAMProductType')
         if cam_ is not None:
             return cam_
         else:
@@ -46,18 +103,53 @@ class AppObjects(object):
 
     @property
     def units_manager(self) -> Optional[adsk.core.UnitsManager]:
-        if self.product.productType == 'DesignProductType':
-            units_manager_ = self._design.fusionUnitsManager
-        else:
-            units_manager_ = self.product.unitsManager
+        """adsk.core.UnitsManager from the active document
 
+        If not in an active document with design workspace active, will return adsk.core.UnitsManager if possible
+
+        Returns: adsk.fusion.FusionUnitsManager or adsk.core.UnitsManager if in a different workspace than design.
+        """
+        units_manager_ = None
+        if self.product is not None:
+            if self.product.productType == 'DesignProductType':
+                units_manager_ = self._design.fusionUnitsManager
+            else:
+                try:
+                    units_manager_ = self.product.unitsManager
+                except:
+                    pass
         if units_manager_ is not None:
             return units_manager_
         else:
             return None
 
     @property
+    def f_units_manager(self) -> Optional[adsk.fusion.FusionUnitsManager]:
+        """adsk.fusion.FusionUnitsManager from the active document.
+
+        Only work in design environment.
+
+        Returns: adsk.fusion.FusionUnitsManager or None if in a different workspace than design.
+        """
+        units_manager = None
+        if self.product is not None:
+            if self.product.productType == 'DesignProductType':
+                units_manager = self._design.fusionUnitsManager
+            else:
+                units_manager = None
+
+        if units_manager is not None:
+            return units_manager
+        else:
+            return None
+
+    @property
     def export_manager(self) -> Optional[adsk.fusion.ExportManager]:
+        """adsk.fusion.ExportManager from the active document
+
+        Returns: adsk.fusion.ExportManager from the active document
+
+        """
         if self._design is not None:
             export_manager_ = self._design.exportManager
             return export_manager_
@@ -66,21 +158,40 @@ class AppObjects(object):
 
     @property
     def root_comp(self) -> Optional[adsk.fusion.Component]:
-        if self.product.productType == 'DesignProductType':
-            root_comp_ = self.design.rootComponent
-            return root_comp_
-        else:
-            return None
+        """Every adsk.fusion.Design has exactly one Root Component
+
+        It should also be noted that the Root Component in the Design does not have an associated Occurrence
+
+        Returns: The Root Component of the adsk.fusion.Design
+
+        """
+        root_comp_ = None
+        if self.product is not None:
+            if self.product.productType == 'DesignProductType':
+                root_comp_ = self.design.rootComponent
+
+            if root_comp_ is not None:
+                return root_comp_
+            else:
+                return None
 
     @property
     def time_line(self) -> Optional[adsk.fusion.Timeline]:
-        if self.product.productType == 'DesignProductType':
-            if self._design.designType == adsk.fusion.DesignTypes.ParametricDesignType:
-                time_line_ = self.product.timeline
+        """adsk.fusion.Timeline from the active adsk.fusion.Design
 
-                return time_line_
+        Returns: adsk.fusion.Timeline from the active adsk.fusion.Design
 
-        return None
+        """
+        time_line_ = None
+        if self.product is not None:
+            if self.product.productType == 'DesignProductType':
+                if self._design.designType == adsk.fusion.DesignTypes.ParametricDesignType:
+                    time_line_ = self.product.timeline
+
+        if time_line_ is not None:
+            return time_line_
+        else:
+            return None
 
 
 # Externally usable function to get all relevant application objects easily in a dictionary
